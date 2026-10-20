@@ -12,7 +12,18 @@ const io = new Server(server);
 const wss = new WebSocketServer({ noServer: true });
 let last = null;
 
+app.use(express.json());              // lets the server read JSON posts
 app.use(express.static('public'));
+
+// The Pico W posts its readings here:
+// POST https://your-site/data?key=YOUR_SECRET
+app.post('/data', (req, res) => {
+  if (req.query.key !== KEY) return res.status(401).json({ error: 'bad key' });
+  last = { ...last, ...req.body };    // keeps old values for sensors not sent
+  console.log('[HTTP Data]:', req.body);
+  io.emit('sensor-update', last);
+  res.json({ ok: true });
+});
 
 // ESP32 connects to wss://your-site/esp32?key=YOUR_SECRET
 server.on('upgrade', (req, socket, head) => {
