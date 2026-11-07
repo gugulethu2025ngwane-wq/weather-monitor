@@ -131,7 +131,7 @@
 
   function startDemo() {
     if (!DEMO_ENABLED || demoTimer) return;
-    setStatus('on', 'Online');
+    setStatus('demo', 'Demo mode');
     display(demoReading());
     demoTimer = setInterval(() => display(demoReading()), 2000);
   }
@@ -147,7 +147,7 @@
   socket.on('sensor-update', (d) => {
     lastReceived = Date.now();
     stopDemo();
-    setStatus('on', 'Online');
+    setStatus('on', 'Live: readings from the Pico W');
     display(d);
   });
 
