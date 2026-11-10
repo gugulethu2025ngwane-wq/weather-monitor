@@ -9,12 +9,18 @@
   :root {
     --bg: #f4f6f9; --card: #ffffff; --text: #1b2330; --muted: #5b6678;
     --line: #cfd6e0; --ok: #2e9e4f; --bad: #c0392b; --warn: #d98b00;
+    --accent: #1f5fbf;
+    --shadow: 0 6px 18px rgba(20, 35, 60, 0.12), 0 1px 3px rgba(20, 35, 60, 0.08);
+    --shadow-hover: 0 12px 26px rgba(20, 35, 60, 0.2), 0 2px 6px rgba(20, 35, 60, 0.1);
     --pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='90'%3E%3Cg font-family='Arial,sans-serif' font-weight='700' font-size='18' fill='%231f5fbf' fill-opacity='0.11'%3E%3Ctext x='8' y='28'%3EDUT%3C/text%3E%3Ctext x='78' y='73'%3EDUT%3C/text%3E%3C/g%3E%3C/svg%3E");
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --bg: #12161d; --card: #1b212b; --text: #e8ebf0; --muted: #9aa3b2;
       --line: #2c3441; --ok: #3cb766; --bad: #e0574a; --warn: #f0a62e;
+      --accent: #6ea4f4;
+      --shadow: 0 8px 22px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
+      --shadow-hover: 0 14px 30px rgba(0, 0, 0, 0.65), 0 2px 6px rgba(0, 0, 0, 0.5);
       --pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='90'%3E%3Cg font-family='Arial,sans-serif' font-weight='700' font-size='18' fill='%236ea4f4' fill-opacity='0.12'%3E%3Ctext x='8' y='28'%3EDUT%3C/text%3E%3Ctext x='78' y='73'%3EDUT%3C/text%3E%3C/g%3E%3C/svg%3E");
     }
   }
@@ -32,16 +38,40 @@
   }
 
   header, main { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding-left: 20px; padding-right: 20px; }
-  header { padding-top: 26px; padding-bottom: 6px; }
-  h1 { margin: 0 0 4px; font-size: 1.6rem; }
-  .sub { color: var(--muted); margin: 0 0 10px; }
-  .status { font-size: 0.95rem; color: var(--muted); }
-  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--bad); margin-right: 6px; }
-  .dot.on { background: var(--ok); }
-  .dot.demo { background: var(--warn); }
+  header { padding-top: 22px; padding-bottom: 4px; }
 
-  main { padding-top: 14px; padding-bottom: 40px; display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 16px 18px; }
+  /* title panel */
+  .hero {
+    padding: 22px 24px 18px; border-radius: 14px; border: 1px solid var(--line);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 20%, var(--card)), var(--card) 70%);
+    box-shadow: var(--shadow);
+  }
+  h1 { margin: 0 0 4px; font-size: 1.75rem; font-weight: 700; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); margin: 0 0 12px; }
+  .status { font-size: 0.95rem; color: var(--muted); }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--bad); margin-right: 6px; box-shadow: 0 0 8px var(--bad); }
+  .dot.on { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+  .dot.demo { background: var(--warn); box-shadow: 0 0 8px var(--warn); }
+
+  main { padding-top: 16px; padding-bottom: 40px; display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+  /* reading boxes: shadow, coloured top edge, small icon, lift on hover */
+  .card {
+    position: relative; background: var(--card); border: 1px solid var(--line);
+    border-top: 4px solid var(--c, var(--accent)); border-radius: 14px; padding: 16px 18px;
+    box-shadow: var(--shadow); transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); }
+  .ico {
+    position: absolute; top: 14px; right: 14px; width: 38px; height: 38px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 1.2rem;
+    background: color-mix(in srgb, var(--c, var(--accent)) 18%, transparent);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card { transition: none; }
+    .card:hover { transform: none; }
+  }
+
   .label { color: var(--muted); font-size: 0.95rem; }
   .value { margin-top: 8px; font-size: 2.2rem; font-weight: 600; }
   .unit { font-size: 1rem; font-weight: 400; color: var(--muted); margin-left: 4px; }
@@ -51,18 +81,20 @@
 </head>
 <body>
 <header>
-  <h1>Weather Sensor Node</h1>
-  <p class="sub">Durban University of Technology</p>
-  <div class="status"><span class="dot" id="dot"></span><span id="conn">Waiting for data...</span> &nbsp;|&nbsp; Last update: <span id="time">no data yet</span></div>
+  <div class="hero">
+    <h1>Weather Sensor Node</h1>
+    <p class="sub">Durban University of Technology</p>
+    <div class="status"><span class="dot" id="dot"></span><span id="conn">Waiting for data...</span> &nbsp;|&nbsp; Last update: <span id="time">no data yet</span></div>
+  </div>
 </header>
 
 <main>
-  <div class="card"><div class="label">Temperature</div><div class="value"><span id="temperature">--</span><span class="unit">°C</span></div><div class="note">DHT22</div></div>
-  <div class="card"><div class="label">Humidity</div><div class="value"><span id="humidity">--</span><span class="unit">%</span></div><div class="note">DHT22</div></div>
-  <div class="card"><div class="label">Light intensity</div><div class="value"><span id="light">--</span><span class="unit">lux</span></div><div class="note">Light sensor</div></div>
-  <div class="card"><div class="label">LDR reading</div><div class="value"><span id="ldr">--</span></div><div class="note">LDR (raw value)</div></div>
-  <div class="card"><div class="label">Rainfall</div><div class="text" id="rain">--</div><div class="note">Rain sensor</div></div>
-  <div class="card"><div class="label">Servo angle</div><div class="value"><span id="angle">--</span><span class="unit">°</span></div><div class="note" id="servoNote">Servo motor</div></div>
+  <div class="card" style="--c:#e0574a"><div class="ico">🌡️</div><div class="label">Temperature</div><div class="value"><span id="temperature">--</span><span class="unit">°C</span></div><div class="note">DHT22</div></div>
+  <div class="card" style="--c:#3b9eff"><div class="ico">💧</div><div class="label">Humidity</div><div class="value"><span id="humidity">--</span><span class="unit">%</span></div><div class="note">DHT22</div></div>
+  <div class="card" style="--c:#f0a62e"><div class="ico">☀️</div><div class="label">Light intensity</div><div class="value"><span id="light">--</span><span class="unit">lux</span></div><div class="note">Light sensor</div></div>
+  <div class="card" style="--c:#9b7bff"><div class="ico">🔆</div><div class="label">LDR reading</div><div class="value"><span id="ldr">--</span></div><div class="note">LDR (raw value)</div></div>
+  <div class="card" style="--c:#22b8cf"><div class="ico">🌧️</div><div class="label">Rainfall</div><div class="text" id="rain">--</div><div class="note">Rain sensor</div></div>
+  <div class="card" style="--c:#3cb766"><div class="ico">⚙️</div><div class="label">Servo angle</div><div class="value"><span id="angle">--</span><span class="unit">°</span></div><div class="note" id="servoNote">Servo motor</div></div>
 </main>
 
 <script>
