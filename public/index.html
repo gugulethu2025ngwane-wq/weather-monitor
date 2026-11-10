@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,198 +6,601 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Weather Sensor Node</title>
 <script src="/socket.io/socket.io.js"></script>
+
 <style>
-  :root {
-    --bg: #f4f6f9; --card: #ffffff; --text: #1b2330; --muted: #5b6678;
-    --line: #cfd6e0; --ok: #2e9e4f; --bad: #c0392b; --warn: #d98b00;
-    --accent: #1f5fbf;
-    --shadow: 0 6px 18px rgba(20, 35, 60, 0.12), 0 1px 3px rgba(20, 35, 60, 0.08);
-    --shadow-hover: 0 12px 26px rgba(20, 35, 60, 0.2), 0 2px 6px rgba(20, 35, 60, 0.1);
-    --pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='90'%3E%3Cg font-family='Arial,sans-serif' font-weight='700' font-size='18' fill='%231f5fbf' fill-opacity='0.11'%3E%3Ctext x='8' y='28'%3EDUT%3C/text%3E%3Ctext x='78' y='73'%3EDUT%3C/text%3E%3C/g%3E%3C/svg%3E");
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #12161d; --card: #1b212b; --text: #e8ebf0; --muted: #9aa3b2;
-      --line: #2c3441; --ok: #3cb766; --bad: #e0574a; --warn: #f0a62e;
-      --accent: #6ea4f4;
-      --shadow: 0 8px 22px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
-      --shadow-hover: 0 14px 30px rgba(0, 0, 0, 0.65), 0 2px 6px rgba(0, 0, 0, 0.5);
-      --pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='90'%3E%3Cg font-family='Arial,sans-serif' font-weight='700' font-size='18' fill='%236ea4f4' fill-opacity='0.12'%3E%3Ctext x='8' y='28'%3EDUT%3C/text%3E%3Ctext x='78' y='73'%3EDUT%3C/text%3E%3C/g%3E%3C/svg%3E");
-    }
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; min-height: 100vh; background: var(--bg); color: var(--text);
-    font-family: system-ui, "Segoe UI", Arial, sans-serif;
+:root {
+  color-scheme: dark;
+  --bg: #10151d;
+  --card: #1b2430;
+  --text: #edf2f8;
+  --muted: #a5b1c2;
+  --line: #354254;
+  --ok: #3fc477;
+  --bad: #f06459;
+  --warn: #f2b544;
+  --accent: #79aaff;
+  --shadow: 0 8px 22px rgba(0,0,0,.42);
+  --pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='90'%3E%3Cg font-family='Arial' font-weight='700' font-size='18' fill='%2379aaff' fill-opacity='.12'%3E%3Ctext x='8' y='28'%3EDUT%3C/text%3E%3Ctext x='78' y='73'%3EDUT%3C/text%3E%3C/g%3E%3C/svg%3E");
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f4f6f9;
+  --card: #ffffff;
+  --text: #1b2330;
+  --muted: #5b6678;
+  --line: #cfd6e0;
+  --ok: #2e9e4f;
+  --bad: #c0392b;
+  --warn: #d98b00;
+  --accent: #1f5fbf;
+  --shadow: 0 6px 18px rgba(20,35,60,.12);
+  --pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='90'%3E%3Cg font-family='Arial' font-weight='700' font-size='18' fill='%231f5fbf' fill-opacity='.11'%3E%3Ctext x='8' y='28'%3EDUT%3C/text%3E%3Ctext x='78' y='73'%3EDUT%3C/text%3E%3C/g%3E%3C/svg%3E");
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, "Segoe UI", Arial, sans-serif;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: var(--pattern);
+  background-repeat: repeat;
+  pointer-events: none;
+  z-index: 0;
+}
+
+header, main {
+  position: relative;
+  z-index: 1;
+  max-width: 900px;
+  margin: 0 auto;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+header {
+  padding-top: 22px;
+  padding-bottom: 4px;
+}
+
+.hero {
+  padding: 22px 24px 18px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 20%, var(--card)),
+    var(--card) 70%
+  );
+  box-shadow: var(--shadow);
+}
+
+.hero-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+h1 {
+  margin: 0 0 4px;
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.theme-toggle {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 9px 13px;
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  font-size: .9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.theme-toggle:hover {
+  border-color: var(--accent);
+}
+
+.sub {
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+
+.status {
+  font-size: .95rem;
+  color: var(--muted);
+}
+
+.dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--bad);
+  margin-right: 6px;
+  box-shadow: 0 0 8px var(--bad);
+}
+
+.dot.on {
+  background: var(--ok);
+  box-shadow: 0 0 8px var(--ok);
+}
+
+.dot.demo {
+  background: var(--warn);
+  box-shadow: 0 0 8px var(--warn);
+}
+
+main {
+  padding-top: 16px;
+  padding-bottom: 40px;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.card {
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--c, var(--accent));
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: var(--shadow);
+  transition: transform .2s, box-shadow .2s;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+}
+
+.ico {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 1.2rem;
+  background: color-mix(in srgb, var(--c, var(--accent)) 18%, transparent);
+}
+
+.label {
+  color: var(--muted);
+  font-size: .95rem;
+}
+
+.value {
+  margin-top: 8px;
+  font-size: 2.2rem;
+  font-weight: 600;
+}
+
+.unit {
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--muted);
+  margin-left: 4px;
+}
+
+.text {
+  margin-top: 10px;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.note {
+  margin-top: 10px;
+  font-size: .82rem;
+  color: var(--muted);
+}
+
+/* DUT LOGO - BOTTOM RIGHT */
+.dut-branding {
+  position: fixed;
+  right: 16px;
+  bottom: 14px;
+  z-index: 10;
+  width: min(307px, 42vw);
+  height: auto;
+  display: block;
+  border-radius: 4px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.28);
+}
+
+@media (max-width: 600px) {
+  .dut-branding {
+    width: min(220px, 58vw);
+    right: 10px;
+    bottom: 10px;
   }
 
-  /* many small DUT words in the background */
-  body::before {
-    content: ""; position: fixed; inset: 0;
-    background-image: var(--pattern); background-repeat: repeat;
-    pointer-events: none; z-index: 0;
+  main {
+    padding-bottom: 125px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-top {
+    align-items: center;
   }
 
-  header, main { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding-left: 20px; padding-right: 20px; }
-  header { padding-top: 22px; padding-bottom: 4px; }
-
-  /* title panel */
-  .hero {
-    padding: 22px 24px 18px; border-radius: 14px; border: 1px solid var(--line);
-    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 20%, var(--card)), var(--card) 70%);
-    box-shadow: var(--shadow);
+  .theme-toggle {
+    padding: 8px 10px;
+    font-size: .82rem;
   }
-  h1 { margin: 0 0 4px; font-size: 1.75rem; font-weight: 700; letter-spacing: -0.01em; }
-  .sub { color: var(--muted); margin: 0 0 12px; }
-  .status { font-size: 0.95rem; color: var(--muted); }
-  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--bad); margin-right: 6px; box-shadow: 0 0 8px var(--bad); }
-  .dot.on { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
-  .dot.demo { background: var(--warn); box-shadow: 0 0 8px var(--warn); }
 
-  main { padding-top: 16px; padding-bottom: 40px; display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  h1 {
+    font-size: 1.4rem;
+  }
+}
 
-  /* reading boxes: shadow, coloured top edge, small icon, lift on hover */
+@media (prefers-reduced-motion: reduce) {
   .card {
-    position: relative; background: var(--card); border: 1px solid var(--line);
-    border-top: 4px solid var(--c, var(--accent)); border-radius: 14px; padding: 16px 18px;
-    box-shadow: var(--shadow); transition: transform 0.2s, box-shadow 0.2s;
-  }
-  .card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); }
-  .ico {
-    position: absolute; top: 14px; right: 14px; width: 38px; height: 38px; border-radius: 50%;
-    display: grid; place-items: center; font-size: 1.2rem;
-    background: color-mix(in srgb, var(--c, var(--accent)) 18%, transparent);
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .card { transition: none; }
-    .card:hover { transform: none; }
+    transition: none;
   }
 
-  .label { color: var(--muted); font-size: 0.95rem; }
-  .value { margin-top: 8px; font-size: 2.2rem; font-weight: 600; }
-  .unit { font-size: 1rem; font-weight: 400; color: var(--muted); margin-left: 4px; }
-  .text { margin-top: 10px; font-size: 1.4rem; font-weight: 600; }
-  .note { margin-top: 10px; font-size: 0.82rem; color: var(--muted); }
+  .card:hover {
+    transform: none;
+  }
+}
 </style>
 </head>
+
 <body>
+
 <header>
   <div class="hero">
-    <h1>Weather Sensor Node</h1>
-    <p class="sub">Durban University of Technology</p>
-    <div class="status"><span class="dot" id="dot"></span><span id="conn">Waiting for data...</span> &nbsp;|&nbsp; Last update: <span id="time">no data yet</span></div>
+
+    <div class="hero-top">
+      <h1>Weather Sensor Node</h1>
+
+      <button class="theme-toggle"
+              id="themeToggle"
+              type="button">
+        ☀️ Light mode
+      </button>
+    </div>
+
+    <p class="sub">
+      Durban University of Technology
+    </p>
+
+    <div class="status">
+      <span class="dot" id="dot"></span>
+      <span id="conn">Waiting for data...</span>
+      &nbsp;|&nbsp;
+      Last update:
+      <span id="time">no data yet</span>
+    </div>
+
   </div>
 </header>
 
 <main>
-  <div class="card" style="--c:#e0574a"><div class="ico">🌡️</div><div class="label">Temperature</div><div class="value"><span id="temperature">--</span><span class="unit">°C</span></div><div class="note">AHT20</div></div>
-  <div class="card" style="--c:#3b9eff"><div class="ico">💧</div><div class="label">Humidity</div><div class="value"><span id="humidity">--</span><span class="unit">%</span></div><div class="note">AHT20</div></div>
-  <div class="card" style="--c:#ff7eb6"><div class="ico">🧭</div><div class="label">Air pressure</div><div class="value"><span id="pressure">--</span><span class="unit">hPa</span></div><div class="note">BMP280</div></div>
-  <div class="card" style="--c:#f0a62e"><div class="ico">☀️</div><div class="label">Light intensity</div><div class="value"><span id="light">--</span><span class="unit">lux</span></div><div class="note">Light sensor</div></div>
-  <div class="card" style="--c:#9b7bff"><div class="ico">🔆</div><div class="label">LDR reading</div><div class="value"><span id="ldr">--</span></div><div class="note">LDR (raw value)</div></div>
-  <div class="card" style="--c:#22b8cf"><div class="ico">🌧️</div><div class="label">Rainfall</div><div class="text" id="rain">--</div><div class="note">Rain sensor</div></div>
-  <div class="card" style="--c:#3cb766"><div class="ico">⚙️</div><div class="label">Servo angle</div><div class="value"><span id="angle">--</span><span class="unit">°</span></div><div class="note" id="servoNote">Servo motor</div></div>
+
+  <div class="card" style="--c:#e0574a">
+    <div class="ico">🌡️</div>
+    <div class="label">Temperature</div>
+    <div class="value">
+      <span id="temperature">--</span>
+      <span class="unit">°C</span>
+    </div>
+    <div class="note">AHT20</div>
+  </div>
+
+  <div class="card" style="--c:#3b9eff">
+    <div class="ico">💧</div>
+    <div class="label">Humidity</div>
+    <div class="value">
+      <span id="humidity">--</span>
+      <span class="unit">%</span>
+    </div>
+    <div class="note">AHT20</div>
+  </div>
+
+  <div class="card" style="--c:#ff7eb6">
+    <div class="ico">🧭</div>
+    <div class="label">Air pressure</div>
+    <div class="value">
+      <span id="pressure">--</span>
+      <span class="unit">hPa</span>
+    </div>
+    <div class="note">BMP280</div>
+  </div>
+
+  <div class="card" style="--c:#f0a62e">
+    <div class="ico">☀️</div>
+    <div class="label">Light intensity</div>
+    <div class="value">
+      <span id="light">--</span>
+      <span class="unit">lux</span>
+    </div>
+    <div class="note">Light sensor</div>
+  </div>
+
+  <div class="card" style="--c:#9b7bff">
+    <div class="ico">🔆</div>
+    <div class="label">LDR reading</div>
+    <div class="value">
+      <span id="ldr">--</span>
+    </div>
+    <div class="note">LDR (raw value)</div>
+  </div>
+
+  <div class="card" style="--c:#22b8cf">
+    <div class="ico">🌧️</div>
+    <div class="label">Rainfall</div>
+    <div class="text" id="rain">--</div>
+    <div class="note">Rain sensor</div>
+  </div>
+
+  <div class="card" style="--c:#3cb766">
+    <div class="ico">⚙️</div>
+    <div class="label">Servo angle</div>
+    <div class="value">
+      <span id="angle">--</span>
+      <span class="unit">°</span>
+    </div>
+    <div class="note" id="servoNote">Servo motor</div>
+  </div>
+
 </main>
 
+<!-- DUT BRANDING IMAGE -->
+<img
+  class="dut-branding"
+  src="dut-logo.png"
+  alt="Durban University of Technology - Faculty of Engineering and the Built Environment - Department of Electronic and Computer Engineering"
+>
+
 <script>
-  const $ = (id) => document.getElementById(id);
-  const WAIT_BEFORE_DEMO_MS = 3000;   // wait this long for real data before starting the demo
-  const OFFLINE_AFTER_MS = 15000;     // no real data for this long = go back to demo
-  const LDR_THRESHOLD = 30000;        // demo servo turns when LDR is above this
-  const DEMO_ENABLED = true;          // set to false to turn the demo values off
+const $ = (id) => document.getElementById(id);
 
-  let lastReceived = 0;   // time of the last real reading
-  let demoTimer = null;
+// DARK MODE / LIGHT MODE
+const themeToggle = $('themeToggle');
 
-  function show(id, value) {
-    if (value !== undefined && value !== null) $(id).textContent = value;
+const savedTheme =
+  localStorage.getItem('weather-dashboard-theme');
+
+document.documentElement.dataset.theme =
+  savedTheme === 'light' ? 'light' : 'dark';
+
+function updateThemeButton() {
+  const isDark =
+    document.documentElement.dataset.theme !== 'light';
+
+  themeToggle.textContent =
+    isDark ? '☀️ Light mode' : '🌙 Dark mode';
+
+  themeToggle.setAttribute(
+    'aria-label',
+    isDark ? 'Switch to light mode' : 'Switch to dark mode'
+  );
+}
+
+themeToggle.addEventListener('click', () => {
+
+  const nextTheme =
+    document.documentElement.dataset.theme === 'dark'
+      ? 'light'
+      : 'dark';
+
+  document.documentElement.dataset.theme = nextTheme;
+
+  localStorage.setItem(
+    'weather-dashboard-theme',
+    nextTheme
+  );
+
+  updateThemeButton();
+});
+
+updateThemeButton();
+
+// DEMO SETTINGS
+const WAIT_BEFORE_DEMO_MS = 3000;
+const OFFLINE_AFTER_MS = 15000;
+const LDR_THRESHOLD = 30000;
+const DEMO_ENABLED = true;
+
+let lastReceived = 0;
+let demoTimer = null;
+
+function show(id, value) {
+  if (value !== undefined && value !== null) {
+    $(id).textContent = value;
   }
+}
 
-  function setStatus(kind, text) {
-    $('dot').className = 'dot' + (kind ? ' ' + kind : '');
-    $('conn').textContent = text;
-  }
+function setStatus(kind, text) {
+  $('dot').className = 'dot' + (kind ? ' ' + kind : '');
+  $('conn').textContent = text;
+}
 
-  // Shows one reading on the page (used for both real and demo data)
-  function display(d) {
-    $('time').textContent = new Date().toLocaleTimeString();
+// DISPLAY SENSOR READINGS
+function display(d) {
 
-    if (d.temperature != null) show('temperature', Number(d.temperature).toFixed(1));
-    if (d.humidity != null) show('humidity', Math.round(Number(d.humidity)));
-    if (d.pressure != null) show('pressure', Number(d.pressure) > 0 ? Math.round(Number(d.pressure)) : '--');
+  $('time').textContent = new Date().toLocaleTimeString();
 
-    const lux = d.light != null ? d.light : d.lux;
-    if (lux != null) show('light', Math.round(Number(lux)));
+  if (d.temperature != null)
+    show('temperature', Number(d.temperature).toFixed(1));
 
-    if (d.ldr != null) show('ldr', Math.round(Number(d.ldr)));
+  if (d.humidity != null)
+    show('humidity', Math.round(Number(d.humidity)));
 
-    if (d.rain != null) {
-      // accepts text ("Raining") or a number (above 0.5 = raining)
-      if (typeof d.rain === 'string') show('rain', d.rain);
-      else show('rain', Number(d.rain) > 0.5 ? 'Raining' : 'Not raining');
+  if (d.pressure != null)
+    show(
+      'pressure',
+      Number(d.pressure) > 0
+        ? Math.round(Number(d.pressure))
+        : '--'
+    );
+
+  const lux = d.light != null ? d.light : d.lux;
+
+  if (lux != null)
+    show('light', Math.round(Number(lux)));
+
+  if (d.ldr != null)
+    show('ldr', Math.round(Number(d.ldr)));
+
+  if (d.rain != null) {
+    if (typeof d.rain === 'string') {
+      show('rain', d.rain);
+    } else {
+      show(
+        'rain',
+        Number(d.rain) > 0.5
+          ? 'Raining'
+          : 'Not raining'
+      );
     }
-
-    // servo angle: "angle", "servo_angle", or a numeric "servo"
-    let angle = d.angle != null ? d.angle : d.servo_angle;
-    if (angle == null && typeof d.servo === 'number') angle = d.servo;
-    if (angle != null) show('angle', Math.round(Number(angle)));
-    if (typeof d.servo === 'string') $('servoNote').textContent = d.servo;
   }
 
-  // ---------- Demo data (random values that drift a little) ----------
-  const demo = { t: 24, h: 60, p: 1013, lux: 15000, rain: false };
-  const rand = (a, b) => Math.random() * (b - a) + a;
-  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  let angle =
+    d.angle != null ? d.angle : d.servo_angle;
 
-  function demoReading() {
-    demo.t = clamp(demo.t + rand(-0.4, 0.4), 15, 38);
-    demo.h = clamp(demo.h + rand(-1.5, 1.5), 30, 95);
-    demo.p = clamp(demo.p + rand(-0.6, 0.6), 995, 1030);
-    demo.lux = clamp(demo.lux + rand(-4000, 4000), 0, 54000);
-    if (Math.random() < 0.1) demo.rain = !demo.rain;
-    const ldr = Math.round(clamp(demo.lux / 54000 * 65535 + rand(-1500, 1500), 0, 65535));
-    const lit = ldr > LDR_THRESHOLD;
-    return {
-      temperature: demo.t, humidity: demo.h, pressure: demo.p, light: demo.lux, ldr: ldr,
-      rain: demo.rain ? 'Raining' : 'Not raining',
-      angle: lit ? 90 : 0,
-      servo: lit ? 'Turned (light detected)' : 'Original position (no light)'
-    };
+  if (angle == null && typeof d.servo === 'number') {
+    angle = d.servo;
   }
 
-  function startDemo() {
-    if (!DEMO_ENABLED || demoTimer) return;
-    setStatus('demo', 'Demo mode');
-    display(demoReading());
-    demoTimer = setInterval(() => display(demoReading()), 2000);
+  if (angle != null)
+    show('angle', Math.round(Number(angle)));
+
+  if (typeof d.servo === 'string') {
+    $('servoNote').textContent = d.servo;
+  }
+}
+
+// DEMO DATA
+const demo = {
+  t: 24,
+  h: 60,
+  p: 1013,
+  lux: 15000,
+  rain: false
+};
+
+const rand = (a, b) =>
+  Math.random() * (b - a) + a;
+
+const clamp = (v, a, b) =>
+  Math.min(b, Math.max(a, v));
+
+function demoReading() {
+
+  demo.t = clamp(demo.t + rand(-0.4, 0.4), 15, 38);
+  demo.h = clamp(demo.h + rand(-1.5, 1.5), 30, 95);
+  demo.p = clamp(demo.p + rand(-0.6, 0.6), 995, 1030);
+  demo.lux = clamp(demo.lux + rand(-4000, 4000), 0, 54000);
+
+  if (Math.random() < 0.1) {
+    demo.rain = !demo.rain;
   }
 
-  function stopDemo() {
-    clearInterval(demoTimer);
-    demoTimer = null;
+  const ldr = Math.round(
+    clamp(
+      demo.lux / 54000 * 65535 + rand(-1500, 1500),
+      0,
+      65535
+    )
+  );
+
+  const lit = ldr > LDR_THRESHOLD;
+
+  return {
+    temperature: demo.t,
+    humidity: demo.h,
+    pressure: demo.p,
+    light: demo.lux,
+    ldr: ldr,
+    rain: demo.rain ? 'Raining' : 'Not raining',
+    angle: lit ? 90 : 0,
+    servo: lit
+      ? 'Turned (light detected)'
+      : 'Original position (no light)'
+  };
+}
+
+function startDemo() {
+
+  if (!DEMO_ENABLED || demoTimer) return;
+
+  setStatus('demo', 'Demo mode');
+
+  display(demoReading());
+
+  demoTimer = setInterval(
+    () => display(demoReading()),
+    2000
+  );
+}
+
+function stopDemo() {
+  clearInterval(demoTimer);
+  demoTimer = null;
+}
+
+// REAL DATA FROM PICO W THROUGH NODE.JS
+const socket = io();
+
+socket.on('sensor-update', (d) => {
+
+  lastReceived = Date.now();
+
+  stopDemo();
+
+  setStatus('on', 'Live: readings from the Pico W');
+
+  display(d);
+});
+
+socket.on('disconnect', () => {
+
+  if (!demoTimer) {
+    setStatus('', 'Disconnected from server');
+  }
+});
+
+// START DEMO IF NO REAL DATA ARRIVES
+setTimeout(() => {
+
+  if (!lastReceived) {
+    startDemo();
   }
 
-  // ---------- Real data from the Pico W (through the server) ----------
-  const socket = io();
+}, WAIT_BEFORE_DEMO_MS);
 
-  socket.on('sensor-update', (d) => {
-    lastReceived = Date.now();
-    stopDemo();
-    setStatus('on', 'Live: readings from the Pico W');
-    display(d);
-  });
+// RETURN TO DEMO IF REAL READINGS STOP
+setInterval(() => {
 
-  socket.on('disconnect', () => {
-    if (!demoTimer) setStatus('', 'Disconnected from server');
-  });
+  if (
+    lastReceived &&
+    Date.now() - lastReceived > OFFLINE_AFTER_MS
+  ) {
+    startDemo();
+  }
 
-  // Start the demo if no real reading arrives shortly after the page opens
-  setTimeout(() => { if (!lastReceived) startDemo(); }, WAIT_BEFORE_DEMO_MS);
+}, 1000);
 
-  // If real readings stop, go back to the demo
-  setInterval(() => {
-    if (lastReceived && Date.now() - lastReceived > OFFLINE_AFTER_MS) startDemo();
-  }, 1000);
 </script>
+
 </body>
 </html>
