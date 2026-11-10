@@ -89,8 +89,9 @@
 </header>
 
 <main>
-  <div class="card" style="--c:#e0574a"><div class="ico">🌡️</div><div class="label">Temperature</div><div class="value"><span id="temperature">--</span><span class="unit">°C</span></div><div class="note">DHT22</div></div>
-  <div class="card" style="--c:#3b9eff"><div class="ico">💧</div><div class="label">Humidity</div><div class="value"><span id="humidity">--</span><span class="unit">%</span></div><div class="note">DHT22</div></div>
+  <div class="card" style="--c:#e0574a"><div class="ico">🌡️</div><div class="label">Temperature</div><div class="value"><span id="temperature">--</span><span class="unit">°C</span></div><div class="note">AHT20</div></div>
+  <div class="card" style="--c:#3b9eff"><div class="ico">💧</div><div class="label">Humidity</div><div class="value"><span id="humidity">--</span><span class="unit">%</span></div><div class="note">AHT20</div></div>
+  <div class="card" style="--c:#ff7eb6"><div class="ico">🧭</div><div class="label">Air pressure</div><div class="value"><span id="pressure">--</span><span class="unit">hPa</span></div><div class="note">BMP280</div></div>
   <div class="card" style="--c:#f0a62e"><div class="ico">☀️</div><div class="label">Light intensity</div><div class="value"><span id="light">--</span><span class="unit">lux</span></div><div class="note">Light sensor</div></div>
   <div class="card" style="--c:#9b7bff"><div class="ico">🔆</div><div class="label">LDR reading</div><div class="value"><span id="ldr">--</span></div><div class="note">LDR (raw value)</div></div>
   <div class="card" style="--c:#22b8cf"><div class="ico">🌧️</div><div class="label">Rainfall</div><div class="text" id="rain">--</div><div class="note">Rain sensor</div></div>
@@ -122,6 +123,7 @@
 
     if (d.temperature != null) show('temperature', Number(d.temperature).toFixed(1));
     if (d.humidity != null) show('humidity', Math.round(Number(d.humidity)));
+    if (d.pressure != null) show('pressure', Number(d.pressure) > 0 ? Math.round(Number(d.pressure)) : '--');
 
     const lux = d.light != null ? d.light : d.lux;
     if (lux != null) show('light', Math.round(Number(lux)));
@@ -142,19 +144,20 @@
   }
 
   // ---------- Demo data (random values that drift a little) ----------
-  const demo = { t: 24, h: 60, lux: 15000, rain: false };
+  const demo = { t: 24, h: 60, p: 1013, lux: 15000, rain: false };
   const rand = (a, b) => Math.random() * (b - a) + a;
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
   function demoReading() {
     demo.t = clamp(demo.t + rand(-0.4, 0.4), 15, 38);
     demo.h = clamp(demo.h + rand(-1.5, 1.5), 30, 95);
+    demo.p = clamp(demo.p + rand(-0.6, 0.6), 995, 1030);
     demo.lux = clamp(demo.lux + rand(-4000, 4000), 0, 54000);
     if (Math.random() < 0.1) demo.rain = !demo.rain;
     const ldr = Math.round(clamp(demo.lux / 54000 * 65535 + rand(-1500, 1500), 0, 65535));
     const lit = ldr > LDR_THRESHOLD;
     return {
-      temperature: demo.t, humidity: demo.h, light: demo.lux, ldr: ldr,
+      temperature: demo.t, humidity: demo.h, pressure: demo.p, light: demo.lux, ldr: ldr,
       rain: demo.rain ? 'Raining' : 'Not raining',
       angle: lit ? 90 : 0,
       servo: lit ? 'Turned (light detected)' : 'Original position (no light)'
