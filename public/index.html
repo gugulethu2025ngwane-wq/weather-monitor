@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Weather Sensor Node</title>
+<title>Weather Sensor Node | DUT</title>
 <script src="/socket.io/socket.io.js"></script>
 
 <style>
@@ -100,6 +100,7 @@ h1 {
 }
 
 .theme-toggle {
+  flex: 0 0 auto;
   border: 1px solid var(--line);
   border-radius: 999px;
   padding: 9px 13px;
@@ -211,7 +212,7 @@ main {
   color: var(--muted);
 }
 
-/* DUT LOGO - BOTTOM RIGHT */
+/* ACTUAL DUT BRANDING IMAGE */
 .dut-branding {
   position: fixed;
   right: 16px;
@@ -278,9 +279,7 @@ main {
       </button>
     </div>
 
-    <p class="sub">
-      Durban University of Technology
-    </p>
+    <p class="sub">Durban University of Technology</p>
 
     <div class="status">
       <span class="dot" id="dot"></span>
@@ -363,11 +362,11 @@ main {
 
 </main>
 
-<!-- DUT BRANDING IMAGE -->
+<!-- DUT LOGO -->
 <img
   class="dut-branding"
   src="dut-logo.png"
-  alt="Durban University of Technology - Faculty of Engineering and the Built Environment - Department of Electronic and Computer Engineering"
+  alt="Durban University of Technology, Faculty of Engineering and the Built Environment, Department of Electronic and Computer Engineering"
 >
 
 <script>
@@ -437,7 +436,8 @@ function setStatus(kind, text) {
 // DISPLAY SENSOR READINGS
 function display(d) {
 
-  $('time').textContent = new Date().toLocaleTimeString();
+  $('time').textContent =
+    new Date().toLocaleTimeString();
 
   if (d.temperature != null)
     show('temperature', Number(d.temperature).toFixed(1));
