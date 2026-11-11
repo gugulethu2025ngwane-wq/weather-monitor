@@ -1,29 +1,45 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-
-const PORT = process.env.PORT || 3000;
-const KEY = process.env.PICO_KEY || process.env.ESP_KEY || 'change-me';
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
-let last = null;
 
+// Middleware to parse JSON bodies from the Pico W
 app.use(express.json());
-app.use(express.static('public'));
 
-// The Pico W posts its readings here:
-// POST https://your-site/data?key=YOUR_SECRET
+// Serve static frontend files (assumes your HTML file is named index.html in a 'public' folder)
+app.use(express.static(path.join(__dirname, 'public')));
+
+// API Key configured on your Pico W
+const API_KEY = "20002004040623";
+
+// ==========================================
+// RECEIVE DATA FROM PICO W
+// ==========================================
 app.post('/data', (req, res) => {
-  if (req.query.key !== KEY) return res.status(401).json({ error: 'bad key' });
-  last = { ...last, ...req.body };   // keeps old values for sensors not sent
-  console.log('[Pico W data]:', req.body);
-  io.emit('sensor-update', last);
+  const clientKey = req.query.key;
+
+  // Validate API key
+  if (clientKey !== API_KEY) {
+    console.log("Unauthorized attempt with key:", clientKey);
+    return res.status(403).json({ error: "Invalid API key" });
+  }
+
+  const sensorData = req.body;
+  console.log("Received sensor data from Pico W:", sensorData);
+
+  // Broadcast the data to all connected browser dashboards via Socket.io
+  io.emit('sensor-update', sensorData);
+
+  // Send success response back to Pico W
   res.json({ ok: true });
 });
 
-// New visitors instantly get the latest reading
-io.on('connection', s => { if (last) s.emit('sensor-update', last); });
-
-server.listen(PORT, '0.0.0.0', () => console.log('Running on port ' + PORT));
+// Start server on Render's assigned port or fallback to 3000 locally
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`Weather monitor server running on port ${PORT}`);
+});
