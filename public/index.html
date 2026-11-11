@@ -379,7 +379,7 @@ function updateThemeButton() {
 
   themeToggle.setAttribute(
     'aria-label',
-    isDark ? 'Switch to light mode' : 'Switch to dark mode'
+    isDark ? 'Switch to light mode' : 'Switch to light mode'
   );
 }
 
@@ -440,7 +440,7 @@ function display(d) {
     show('light', Math.round(Number(lux)));
 
   if (d.ldr != null)
-    show('ldr', Math.round(Number(ldr)));
+    show('ldr', Math.round(Number(d.ldr)));
 
   if (d.rain != null) {
     if (typeof d.rain === 'string') {
@@ -464,3 +464,121 @@ function display(d) {
 
   if (angle != null)
     show('angle', Math.round(Number(angle)));
+
+  if (typeof d.servo === 'string') {
+    $('servoNote').textContent = d.servo;
+  }
+}
+
+// DEMO DATA
+const demo = {
+  t: 24,
+  h: 60,
+  lux: 15000,
+  rain: false
+};
+
+const rand = (a, b) =>
+  Math.random() * (b - a) + a;
+
+const clamp = (v, a, b) =>
+  Math.min(b, Math.max(a, v));
+
+function demoReading() {
+
+  demo.t = clamp(demo.t + rand(-0.4, 0.4), 15, 38);
+  demo.h = clamp(demo.h + rand(-1.5, 1.5), 30, 95);
+  demo.lux = clamp(demo.lux + rand(-4000, 4000), 0, 54000);
+
+  if (Math.random() < 0.1) {
+    demo.rain = !demo.rain;
+  }
+
+  const ldr = Math.round(
+    clamp(
+      demo.lux / 54000 * 65535 + rand(-1500, 1500),
+      0,
+      65535
+    )
+  );
+
+  const lit = ldr > LDR_THRESHOLD;
+
+  return {
+    temperature: demo.t,
+    humidity: demo.h,
+    light: demo.lux,
+    ldr: ldr,
+    rain: demo.rain ? 'Raining' : 'Not raining',
+    angle: lit ? 90 : 0,
+    servo: lit
+      ? 'Turned (light detected)'
+      : 'Original position (no light)'
+  };
+}
+
+function startDemo() {
+
+  if (!DEMO_ENABLED || demoTimer) return;
+
+  setStatus('demo', 'Demo mode');
+
+  display(demoReading());
+
+  demoTimer = setInterval(
+    () => display(demoReading()),
+    2000
+  );
+}
+
+function stopDemo() {
+  clearInterval(demoTimer);
+  demoTimer = null;
+}
+
+// REAL DATA FROM PICO W THROUGH NODE.JS
+const socket = io();
+
+socket.on('sensor-update', (d) => {
+
+  lastReceived = Date.now();
+
+  stopDemo();
+
+  setStatus('on', 'Live: readings from the Pico W');
+
+  display(d);
+});
+
+socket.on('disconnect', () => {
+
+  if (!demoTimer) {
+    setStatus('', 'Disconnected from server');
+  }
+});
+
+// START DEMO IF NO REAL DATA ARRIVES
+setTimeout(() => {
+
+  if (!lastReceived) {
+    startDemo();
+  }
+
+}, WAIT_BEFORE_DEMO_MS);
+
+// RETURN TO DEMO IF REAL READINGS STOP
+setInterval(() => {
+
+  if (
+    lastReceived &&
+    Date.now() - lastReceived > OFFLINE_AFTER_MS
+  ) {
+    startDemo();
+  }
+
+}, 1000);
+
+</script>
+
+</body>
+</html>
